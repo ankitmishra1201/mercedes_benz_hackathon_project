@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 
-import 'device_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -30,6 +30,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   FlutterBluePlus flutterBlue = FlutterBluePlus.instance;
   List<ScanResult> scanResultList = [];
+  List<BluetoothService> bluetoothService=[];
+
   bool _isScanning = false;
 
   @override
@@ -59,9 +61,15 @@ class _MyHomePageState extends State<MyHomePage> {
       flutterBlue.startScan(timeout: Duration(seconds: 4));
       // scan result listener
       flutterBlue.scanResults.listen((results) {
-        scanResultList = results;
-        // Update UI
-        setState(() {});
+
+        if(results.isNotEmpty){
+          scanResultList = results;
+
+
+        }
+        
+        
+
       });
     } else {
       // If scanning, stop scanning
@@ -89,23 +97,24 @@ class _MyHomePageState extends State<MyHomePage> {
     if (r.device.name.isNotEmpty) {
       // If device.name has a value
       name = r.device.name;
+
     } else if (r.advertisementData.localName.isNotEmpty) {
       // if advertisementData.localName has a value
       name = r.advertisementData.localName;
     }else if (r.device.name.isEmpty&& r.advertisementData.localName.isEmpty){
-      name="Band Name";
+      name="Unknown";
 
     }
     return Text(name);
   }
 
-  Widget devicestatus(ScanResult r) {
-    String status = '';
-    status=r.device.state.toString();
 
 
-    return Text(status);
-  }
+
+
+
+
+
   /* BLE icon widget */
   Widget leading(ScanResult r) {
     return CircleAvatar(
@@ -119,17 +128,52 @@ class _MyHomePageState extends State<MyHomePage> {
 
   /* Function called when a device item is tapped */
   void onTap(ScanResult r) {
-    print('${r.device.name}');
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => DeviceScreen(device: r.device)),
-    );
+
+    setState(() {
+      FlutterRingtonePlayer.play(
+        android: AndroidSounds.alarm,
+        ios: IosSounds.alarm,
+        looping: true,
+        // Android only - API >= 28
+        volume: 100,
+        // Android only - API >= 28
+        asAlarm: false,
+      );
+      showModalBottomSheet(
+          context: context,
+          builder: (BuildContext context) {
+            return Container(
+              child: Column(
+                children: [
+                  Text(
+                      "Band No has been detected"
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        FlutterRingtonePlayer.stop();
+                        Navigator.of(context).pop();
+                      },
+                      child: Container(
+                        child: Text(
+                            "Going for checking"
+                        ),
+                      )
+                  )
+                ],
+              ),
+            );
+          });
+
+
+
   }
+    );}
 
   /* device item widget */
   Widget listItem(ScanResult r) {
     return ListTile(
-      onTap: () => onTap(r),
+
+      onTap: ()=>onTap(r)  ,
       leading: leading(r),
       title: deviceName(r),
       subtitle: deviceMacAddress(r),
